@@ -1,8 +1,9 @@
 from pathlib import Path
 
 import numpy as np
+from sklearn.model_selection import StratifiedKFold
 
-from bayesian_predictive_model_averaging.sampling import sample_subset
+from bayesian_predictive_model_averaging.sampling import make_cv_splitter, sample_subset
 
 
 def test_classification_subset_is_cv_admissible_and_probability_is_conditional():
@@ -29,3 +30,13 @@ def test_logistic_sampling_is_centralized_in_the_prior_module():
     for path in package_root.rglob("*.py"):
         occurrences += path.read_text().count("logaddexp")
     assert occurrences == 1
+
+
+def test_custom_cv_splitter_is_copied_without_sklearn_clone():
+    original = StratifiedKFold(n_splits=3, shuffle=True, random_state=11)
+    copied = make_cv_splitter("classification", original, seed=23)
+
+    assert copied is not original
+    assert copied.n_splits == original.n_splits
+    assert copied.shuffle is original.shuffle
+    assert copied.random_state == original.random_state

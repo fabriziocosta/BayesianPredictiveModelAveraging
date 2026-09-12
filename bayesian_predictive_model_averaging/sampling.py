@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
 from scipy.sparse import issparse
 from scipy.special import gammaln, logsumexp
-from sklearn.base import clone
 from sklearn.model_selection import KFold, StratifiedKFold
 
 from .adapters import (
@@ -73,7 +73,10 @@ def make_cv_splitter(task: str, cv: int | Any, seed: int) -> Any:
         if task == "classification":
             return StratifiedKFold(n_splits=int(cv), shuffle=True, random_state=seed)
         return KFold(n_splits=int(cv), shuffle=True, random_state=seed)
-    return clone(cv)
+    # CV splitters are stateful strategy objects, not sklearn estimators, so
+    # sklearn.base.clone cannot copy them. A fresh deep copy preserves custom
+    # splitter configuration without sharing mutable state across draws.
+    return deepcopy(cv)
 
 
 def feasible_subset_sizes(
